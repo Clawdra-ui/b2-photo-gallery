@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
-import { buildFolderList, isDatabaseUnavailableError, listIndexedFilesFromB2 } from "@/lib/live-index";
+import {
+  buildFolderList,
+  isDatabaseUnavailableError,
+  listIndexedFilesFromB2,
+  shouldPreferLiveIndex,
+} from "@/lib/live-index";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (shouldPreferLiveIndex()) {
+    const files = await listIndexedFilesFromB2();
+
+    return NextResponse.json({
+      folders: buildFolderList(files),
+      source: "b2-live",
+    });
+  }
+
   try {
     const files = await prisma.indexedFile.findMany({
       select: { folderPath: true, objectKey: true },

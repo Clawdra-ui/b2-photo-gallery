@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { filterAndSortFiles, isDatabaseUnavailableError, listIndexedFilesFromB2 } from "@/lib/live-index";
+import {
+  filterAndSortFiles,
+  isDatabaseUnavailableError,
+  listIndexedFilesFromB2,
+  shouldPreferLiveIndex,
+} from "@/lib/live-index";
 import { prisma } from "@/lib/prisma";
 import { DELIVERY_FOLDERS, isValidObjectKey } from "@/lib/utils";
 import { FileFilter } from "@/lib/types";
@@ -52,6 +57,26 @@ export async function GET(request: NextRequest) {
       default: return { lastModified: "desc" as const };
     }
   })();
+
+  if (shouldPreferLiveIndex()) {
+    const liveFiles = filterAndSortFiles(await listIndexedFilesFromB2(), {
+      search,
+      folder,
+      sortBy,
+      deliveryOnly,
+    });
+    const total = liveFiles.length;
+    const files = liveFiles.slice((page - 1) * pageSize, page * pageSize);
+
+    return NextResponse.json({
+      files,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+      source: "b2-live",
+    });
+  }
 
   try {
     const [files, total] = await Promise.all([

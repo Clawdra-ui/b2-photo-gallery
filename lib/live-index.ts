@@ -18,6 +18,10 @@ let cache:
   | undefined;
 let inflight: Promise<IndexedFile[]> | undefined;
 
+export function shouldPreferLiveIndex(): boolean {
+  return process.env.VERCEL === "1" && (process.env.DATABASE_URL || "").startsWith("file:");
+}
+
 export function isDatabaseUnavailableError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
 

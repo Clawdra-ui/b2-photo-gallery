@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getLiveScanSummary, isDatabaseUnavailableError } from "@/lib/live-index";
+import {
+  getLiveScanSummary,
+  isDatabaseUnavailableError,
+  shouldPreferLiveIndex,
+} from "@/lib/live-index";
 import { prisma } from "@/lib/prisma";
 import { listAllObjects, validateEnv } from "@/lib/s3";
 import { isJpegFile, extractFolderPath, extractFilename, isValidObjectKey } from "@/lib/utils";
@@ -17,6 +21,21 @@ export async function POST() {
       error: "Missing environment variables",
       missing,
     }, { status: 400 });
+  }
+
+  if (shouldPreferLiveIndex()) {
+    const summary = await getLiveScanSummary();
+
+    return NextResponse.json({
+      success: true,
+      totalScanned: summary.totalScanned,
+      totalJpegs: summary.totalJpegs,
+      insertedOrUpdated: 0,
+      skipped: summary.skipped,
+      removed: 0,
+      persisted: false,
+      errors: ["Database unavailable in this environment; returned live B2 results only."],
+    });
   }
 
   try {
@@ -141,6 +160,16 @@ export async function POST() {
 }
 
 export async function GET() {
+  if (shouldPreferLiveIndex()) {
+    const summary = await getLiveScanSummary();
+
+    return NextResponse.json({
+      total: summary.totalJpegs,
+      lastScan: null,
+      source: "b2-live",
+    });
+  }
+
   try {
     const count = await prisma.indexedFile.count();
     const lastFile = await prisma.indexedFile.findFirst({
