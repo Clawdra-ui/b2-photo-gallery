@@ -13,7 +13,11 @@ const SHARP_CONCURRENCY = 4;
 sharp.concurrency(SHARP_CONCURRENCY);
 
 function getThumbDir(): string {
-  return process.env.THUMBNAIL_DIR || "./storage/thumbs";
+  if (process.env.THUMBNAIL_DIR) {
+    return process.env.THUMBNAIL_DIR;
+  }
+
+  return process.env.VERCEL ? "/tmp/b2-gallery-thumbs" : "./storage/thumbs";
 }
 
 function hashKey(key: string): string {
