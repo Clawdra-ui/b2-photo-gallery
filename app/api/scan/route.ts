@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getLiveScanSummary, isDatabaseUnavailableError } from "@/lib/live-index";
 import { prisma } from "@/lib/prisma";
 import { listAllObjects, validateEnv } from "@/lib/s3";
 import { isJpegFile, extractFolderPath, extractFilename, isValidObjectKey } from "@/lib/utils";
@@ -117,6 +118,21 @@ export async function POST() {
       errors: errors.slice(0, 100),
     });
   } catch (err) {
+    if (isDatabaseUnavailableError(err)) {
+      const summary = await getLiveScanSummary();
+
+      return NextResponse.json({
+        success: true,
+        totalScanned: summary.totalScanned,
+        totalJpegs: summary.totalJpegs,
+        insertedOrUpdated: 0,
+        skipped: summary.skipped,
+        removed: 0,
+        persisted: false,
+        errors: ["Database unavailable in this environment; returned live B2 results only."],
+      });
+    }
+
     return NextResponse.json(
       { success: false, error: err instanceof Error ? err.message : "Scan failed" },
       { status: 500 }
@@ -125,14 +141,28 @@ export async function POST() {
 }
 
 export async function GET() {
-  const count = await prisma.indexedFile.count();
-  const lastFile = await prisma.indexedFile.findFirst({
-    orderBy: { updatedAt: "desc" },
-    select: { updatedAt: true },
-  });
+  try {
+    const count = await prisma.indexedFile.count();
+    const lastFile = await prisma.indexedFile.findFirst({
+      orderBy: { updatedAt: "desc" },
+      select: { updatedAt: true },
+    });
 
-  return NextResponse.json({
-    total: count,
-    lastScan: lastFile?.updatedAt || null,
-  });
+    return NextResponse.json({
+      total: count,
+      lastScan: lastFile?.updatedAt || null,
+    });
+  } catch (err) {
+    if (!isDatabaseUnavailableError(err)) {
+      throw err;
+    }
+
+    const summary = await getLiveScanSummary();
+
+    return NextResponse.json({
+      total: summary.totalJpegs,
+      lastScan: null,
+      source: "b2-live",
+    });
+  }
 }

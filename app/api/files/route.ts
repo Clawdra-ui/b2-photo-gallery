@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { filterAndSortFiles, isDatabaseUnavailableError, listIndexedFilesFromB2 } from "@/lib/live-index";
 import { prisma } from "@/lib/prisma";
 import { DELIVERY_FOLDERS, isValidObjectKey } from "@/lib/utils";
 import { FileFilter } from "@/lib/types";
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get("search") || "";
   const folder = searchParams.get("folder") || "";
-  const sortBy = (searchParams.get("sortBy") || "newest") as FileFilter["sortBy"];
+  const sortBy = (searchParams.get("sortBy") || "newest") as NonNullable<FileFilter["sortBy"]>;
   const deliveryOnly = searchParams.get("deliveryOnly") === "true";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "48", 10)));
@@ -52,21 +53,45 @@ export async function GET(request: NextRequest) {
     }
   })();
 
-  const [files, total] = await Promise.all([
-    prisma.indexedFile.findMany({
-      where,
-      orderBy,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.indexedFile.count({ where }),
-  ]);
+  try {
+    const [files, total] = await Promise.all([
+      prisma.indexedFile.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.indexedFile.count({ where }),
+    ]);
 
-  return NextResponse.json({
-    files,
-    total,
-    page,
-    pageSize,
-    totalPages: Math.ceil(total / pageSize),
-  });
+    return NextResponse.json({
+      files,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    });
+  } catch (err) {
+    if (!isDatabaseUnavailableError(err)) {
+      throw err;
+    }
+
+    const liveFiles = filterAndSortFiles(await listIndexedFilesFromB2(), {
+      search,
+      folder,
+      sortBy,
+      deliveryOnly,
+    });
+    const total = liveFiles.length;
+    const files = liveFiles.slice((page - 1) * pageSize, page * pageSize);
+
+    return NextResponse.json({
+      files,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+      source: "b2-live",
+    });
+  }
 }

@@ -1,26 +1,28 @@
 import { NextResponse } from "next/server";
+import { buildFolderList, isDatabaseUnavailableError, listIndexedFilesFromB2 } from "@/lib/live-index";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const files = await prisma.indexedFile.findMany({
-    select: { folderPath: true, objectKey: true },
-  });
+  try {
+    const files = await prisma.indexedFile.findMany({
+      select: { folderPath: true, objectKey: true },
+    });
 
-  const folders = new Set<string>();
-  for (const file of files) {
-    if (file.folderPath) {
-      const parts = file.folderPath.split("/");
-      let acc = "";
-      for (const part of parts) {
-        acc += (acc ? "/" : "") + part;
-        folders.add(acc);
-      }
+    return NextResponse.json({
+      folders: buildFolderList(files),
+    });
+  } catch (err) {
+    if (!isDatabaseUnavailableError(err)) {
+      throw err;
     }
-  }
 
-  return NextResponse.json({
-    folders: [...folders].sort(),
-  });
+    const files = await listIndexedFilesFromB2();
+
+    return NextResponse.json({
+      folders: buildFolderList(files),
+      source: "b2-live",
+    });
+  }
 }
