@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { listAllObjects } from "@/lib/s3";
+import { listAllObjects, validateEnv } from "@/lib/s3";
 import { isJpegFile, extractFolderPath, extractFilename, isValidObjectKey } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
+
+const BATCH_SIZE = 100;
 
 export async function POST() {
+  const missing = validateEnv();
+  if (missing.length > 0) {
+    return NextResponse.json({
+      success: false,
+      error: "Missing environment variables",
+      missing,
+    }, { status: 400 });
+  }
+
   try {
     const existingKeys = new Set<string>();
     const dbFiles = await prisma.indexedFile.findMany({ select: { objectKey: true } });
@@ -17,6 +29,39 @@ export async function POST() {
     let insertedOrUpdated = 0;
     let skipped = 0;
     const errors: string[] = [];
+
+    let batch: Array<{
+      objectKey: string;
+      filename: string;
+      folderPath: string;
+      size: number;
+      lastModified: Date;
+      contentType: string;
+    }> = [];
+
+    async function flushBatch() {
+      if (batch.length === 0) return;
+      const records = batch;
+      batch = [];
+      try {
+        await prisma.$transaction(
+          records.map((r) =>
+            prisma.indexedFile.upsert({
+              where: { objectKey: r.objectKey },
+              create: r,
+              update: {
+                size: r.size,
+                lastModified: r.lastModified,
+                contentType: r.contentType,
+              },
+            })
+          )
+        );
+        insertedOrUpdated += records.length;
+      } catch (err) {
+        errors.push(`Batch failed (${records.length} records): ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
 
     await listAllObjects(async (objects) => {
       for (const obj of objects) {
@@ -36,49 +81,44 @@ export async function POST() {
         totalJpegs++;
         allKeysCurrent.add(key);
 
-        try {
-          await prisma.indexedFile.upsert({
-            where: { objectKey: key },
-            create: {
-              objectKey: key,
-              filename: extractFilename(key),
-              folderPath: extractFolderPath(key),
-              size: obj.Size,
-              lastModified: obj.LastModified,
-              contentType: "image/jpeg",
-            },
-            update: {
-              size: obj.Size,
-              lastModified: obj.LastModified,
-              contentType: "image/jpeg",
-            },
-          });
-          insertedOrUpdated++;
-        } catch (err) {
-          errors.push(`Failed to index ${key}: ${err instanceof Error ? err.message : String(err)}`);
+        batch.push({
+          objectKey: key,
+          filename: extractFilename(key),
+          folderPath: extractFolderPath(key),
+          size: obj.Size,
+          lastModified: obj.LastModified,
+          contentType: "image/jpeg",
+        });
+
+        if (batch.length >= BATCH_SIZE) {
+          await flushBatch();
         }
       }
     });
 
-    // Remove files that no longer exist in B2
+    await flushBatch();
+
     const toDelete = [...existingKeys].filter((k) => !allKeysCurrent.has(k));
+    let removed = 0;
     if (toDelete.length > 0) {
-      await prisma.indexedFile.deleteMany({
+      const result = await prisma.indexedFile.deleteMany({
         where: { objectKey: { in: toDelete } },
       });
+      removed = result.count;
     }
 
     return NextResponse.json({
+      success: true,
       totalScanned,
       totalJpegs,
       insertedOrUpdated,
       skipped,
-      removed: toDelete.length,
+      removed,
       errors: errors.slice(0, 100),
     });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Scan failed" },
+      { success: false, error: err instanceof Error ? err.message : "Scan failed" },
       { status: 500 }
     );
   }

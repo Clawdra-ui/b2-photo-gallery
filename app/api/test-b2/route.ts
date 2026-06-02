@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server";
-import { client } from "@/lib/s3";
+import { client, validateEnv } from "@/lib/s3";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const missing: string[] = [];
-
-  if (!process.env.B2_APPLICATION_KEY_ID) missing.push("B2_APPLICATION_KEY_ID");
-  if (!process.env.B2_APPLICATION_KEY) missing.push("B2_APPLICATION_KEY");
-  if (!process.env.B2_BUCKET_NAME) missing.push("B2_BUCKET_NAME");
-  if (!process.env.B2_ENDPOINT) missing.push("B2_ENDPOINT");
-  if (!process.env.B2_REGION) missing.push("B2_REGION");
-
+  const missing = validateEnv();
   if (missing.length > 0) {
     return NextResponse.json({
       success: false,

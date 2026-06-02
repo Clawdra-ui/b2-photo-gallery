@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isDeliveryFolder, isValidObjectKey } from "@/lib/utils";
+import { DELIVERY_FOLDERS, isValidObjectKey } from "@/lib/utils";
 import { FileFilter } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -18,40 +18,39 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid folder path" }, { status: 400 });
   }
 
-  const where: Record<string, unknown> = {};
+  const andFilters: Record<string, unknown>[] = [];
 
   if (search) {
-    where.OR = [
-      { filename: { contains: search } },
-      { objectKey: { contains: search } },
-    ];
+    andFilters.push({
+      OR: [
+        { filename: { contains: search } },
+        { objectKey: { contains: search } },
+      ],
+    });
   }
 
   if (folder) {
-    where.folderPath = { startsWith: folder };
+    andFilters.push({ folderPath: { startsWith: folder } });
   }
 
   if (deliveryOnly) {
-    where.folderPath = {
-      ...(where.folderPath as object || {}),
-      contains: "DELIVERY",
-    };
+    andFilters.push({
+      OR: DELIVERY_FOLDERS.map((kw) => ({
+        folderPath: { contains: kw },
+      })),
+    });
   }
 
-  const orderBy: Record<string, unknown> = {};
-  switch (sortBy) {
-    case "oldest":
-      orderBy.lastModified = "asc";
-      break;
-    case "name":
-      orderBy.filename = "asc";
-      break;
-    case "size":
-      orderBy.size = "desc";
-      break;
-    default:
-      orderBy.lastModified = "desc";
-  }
+  const where = andFilters.length > 0 ? { AND: andFilters } : {};
+
+  const orderBy = (() => {
+    switch (sortBy) {
+      case "oldest": return { lastModified: "asc" as const };
+      case "name": return { filename: "asc" as const };
+      case "size": return { size: "desc" as const };
+      default: return { lastModified: "desc" as const };
+    }
+  })();
 
   const [files, total] = await Promise.all([
     prisma.indexedFile.findMany({
