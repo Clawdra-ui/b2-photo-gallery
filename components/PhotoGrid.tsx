@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import styles from "./PhotoGrid.module.css";
 import { IndexedFile } from "@/lib/types";
 
@@ -12,10 +12,16 @@ interface PhotoGridProps {
 }
 
 export default function PhotoGrid({ files, loading, lightboxIndex, onFileClick }: PhotoGridProps) {
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const [visibleCount, setVisibleCount] = useState(48);
+  const [loadedMap, setLoadedMap] = useState<Set<string>>(new Set());
 
-  const handleImageLoad = useCallback((index: number) => {
+  const handleImageLoad = useCallback((objectKey: string, index: number) => {
+    setLoadedMap((prev) => {
+      if (prev.has(objectKey)) return prev;
+      const next = new Set(prev);
+      next.add(objectKey);
+      return next;
+    });
     if (index >= visibleCount - 8) {
       setVisibleCount((v) => Math.min(files.length, v + 24));
     }
@@ -52,13 +58,15 @@ export default function PhotoGrid({ files, loading, lightboxIndex, onFileClick }
               src={`/api/thumb/${file.id}`}
               alt={file.filename}
               className={styles.img}
+              data-loaded={loadedMap.has(file.objectKey)}
               loading="lazy"
               decoding="async"
-              onLoad={() => handleImageLoad(index)}
+              onLoad={() => handleImageLoad(file.objectKey, index)}
             />
           </div>
           <div className={styles.info}>
             <span className={styles.filename}>{file.filename}</span>
+            <span className={styles.index}>{(index + 1).toString().padStart(2, "0")}</span>
           </div>
         </div>
       ))}

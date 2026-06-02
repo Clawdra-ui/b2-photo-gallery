@@ -101,7 +101,11 @@ export default function FolderTree({ folders, selectedFolder, onSelect }: Folder
         <span className={styles.dot} />
         <span className={styles.name}>All Files</span>
       </div>
-      {tree.map(renderNode)}
+      {tree.length === 0 ? (
+        <div className={styles.empty}>No folders indexed</div>
+      ) : (
+        tree.map(renderNode)
+      )}
     </div>
   );
 }

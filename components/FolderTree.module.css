@@ -1,52 +1,93 @@
 .tree {
-  font-size: 13px;
+  font-size: var(--text-sm);
+  padding: var(--space-2) 0;
+  flex: 1;
 }
 
 .node {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: var(--space-2);
+  padding: 6px var(--space-3) 6px var(--space-2);
   cursor: pointer;
-  color: #999;
-  transition: background 0.1s, color 0.1s;
-  border-radius: 0;
+  color: var(--color-text-secondary);
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  user-select: none;
+  position: relative;
+}
+
+.node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-accent);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform var(--duration-base) var(--ease-emphasized);
 }
 
 .node:hover {
-  background: #1a1a1a;
-  color: #ccc;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--color-text-primary);
 }
 
 .node.selected {
-  background: #1f1f1f;
-  color: #fff;
+  background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
+}
+
+.node.selected::before {
+  transform: scaleY(1);
 }
 
 .arrow {
-  font-size: 14px;
-  color: #555;
-  transition: transform 0.15s;
+  font-size: 10px;
+  color: var(--color-text-faint);
+  transition: transform var(--duration-base) var(--ease-emphasized),
+              color var(--duration-fast) var(--ease-out);
   flex-shrink: 0;
   line-height: 1;
+  width: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .arrow.open {
   transform: rotate(90deg);
+  color: var(--color-text-muted);
 }
 
 .dot {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: #444;
+  background: var(--color-text-faint);
   flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.node.selected .dot {
+  background: var(--color-accent);
 }
 
 .name {
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: var(--tracking-tight);
+}
+
+.empty {
+  padding: var(--space-4) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  font-style: italic;
+  text-align: center;
+  letter-spacing: var(--tracking-wide);
 }

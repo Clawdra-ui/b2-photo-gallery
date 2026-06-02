@@ -189,6 +189,7 @@ export default function Gallery() {
               {testing ? "Testing..." : "Test B2 Connection"}
             </button>
           </div>
+          <div className={styles.sidebarLabel}>Folders</div>
           <FolderTree
             folders={folders}
             selectedFolder={filter.folder || ""}

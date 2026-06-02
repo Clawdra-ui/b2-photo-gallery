@@ -1,0 +1,116 @@
+/* Design tokens — single source of truth for visual decisions.
+   Minimalist principle: the photographs are the content; the UI recedes. */
+
+:root {
+  /* ---------- Color: neutrals (rich blacks, warm-tinted grays) ---------- */
+  --color-bg-base: #0a0a0a;
+  --color-bg-surface: #111111;
+  --color-bg-elevated: #161616;
+  --color-bg-overlay: rgba(8, 8, 8, 0.94);
+
+  --color-border-subtle: #1a1a1a;
+  --color-border-default: #232323;
+  --color-border-strong: #2e2e2e;
+  --color-border-focus: #3a3a3a;
+
+  --color-text-primary: #ededed;
+  --color-text-secondary: #9a9a9a;
+  --color-text-muted: #6b6b6b;
+  --color-text-faint: #4a4a4a;
+  --color-text-inverse: #0a0a0a;
+
+  /* ---------- Color: accent (single warm accent, used sparingly) ---------- */
+  --color-accent: #d4a373;            /* warm brass — Lightroom-Classic flag blue replaced with photographer's brass */
+  --color-accent-hover: #e0b07f;
+  --color-accent-subtle: rgba(212, 163, 115, 0.12);
+  --color-accent-border: rgba(212, 163, 115, 0.35);
+
+  /* ---------- Color: semantic ---------- */
+  --color-success: #6fcf97;
+  --color-success-bg: rgba(111, 207, 151, 0.08);
+  --color-success-border: rgba(111, 207, 151, 0.25);
+  --color-error: #cf6f6f;
+  --color-error-bg: rgba(207, 111, 111, 0.08);
+  --color-error-border: rgba(207, 111, 111, 0.25);
+
+  /* ---------- Typography ---------- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+
+  /* ---------- Spacing scale (4px base) ---------- */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---------- Radii ---------- */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+
+  /* ---------- Shadows (subtle — content is the photos) ---------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --shadow-inner: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  /* ---------- Transitions ---------- */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---------- Z-index scale ---------- */
+  --z-base: 0;
+  --z-elevated: 10;
+  --z-sticky: 100;
+  --z-overlay: 1000;
+  --z-modal: 2000;
+
+  /* ---------- Layout ---------- */
+  --layout-toolbar-height: 56px;
+  --layout-sidebar-width: 268px;
+  --layout-meta-height: 60px;
+  --layout-max-content: 1600px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
