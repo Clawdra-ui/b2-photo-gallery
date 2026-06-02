@@ -3,18 +3,66 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model IndexedFile {
-  id           String   @id @default(cuid())
-  objectKey    String   @unique
-  filename     String
-  folderPath   String
-  size         Int
-  lastModified DateTime
-  contentType  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+enum GalleryStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Gallery {
+  id           String        @id @default(cuid())
+  title        String
+  slug         String
+  clientName   String?
+  clientEmail  String?
+  accessKey    String        @unique
+  description  String?
+  status       GalleryStatus @default(DRAFT)
+  allowDownload Boolean      @default(true)
+  expiresAt    DateTime?
+  coverPhotoId String?
+  b2Prefix     String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  photos       Photo[]       @relation("GalleryPhotos")
+  coverPhoto   Photo?        @relation("GalleryCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
+
+  @@index([slug])
+  @@index([status])
+}
+
+model Photo {
+  id                   String    @id @default(cuid())
+  galleryId            String
+  b2Key                String    @unique
+  filename             String
+  originalRelativePath String?
+  folderPath           String?
+  size                 Int
+  width                Int?
+  height               Int?
+  contentType          String
+  etag                 String?
+  sortOrder            Int?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  gallery              Gallery   @relation("GalleryPhotos", fields: [galleryId], references: [id], onDelete: Cascade)
+  coverFor             Gallery[] @relation("GalleryCover")
+
+  @@index([galleryId, sortOrder])
+  @@index([galleryId, createdAt])
+}
+
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

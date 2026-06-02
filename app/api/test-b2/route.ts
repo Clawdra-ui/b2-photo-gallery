@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server";
-import { client, validateEnv } from "@/lib/s3";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { NextResponse } from "next/server";
+import { assertAdminRequest } from "@/lib/admin";
+import { s3Client, s3Config, validateB2Env } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const missing = validateEnv();
+  const unauthorized = await assertAdminRequest();
+  if (unauthorized) return unauthorized;
+
+  const missing = validateB2Env();
   if (missing.length > 0) {
     return NextResponse.json({
       success: false,
@@ -15,26 +19,23 @@ export async function GET() {
   }
 
   try {
-    const command = new ListObjectsV2Command({
-      Bucket: process.env.B2_BUCKET_NAME,
+    const response = await s3Client.send(new ListObjectsV2Command({
+      Bucket: s3Config.bucket,
       MaxKeys: 5,
-    });
-
-    const response = await client.send(command);
+    }));
 
     return NextResponse.json({
       success: true,
-      bucket: process.env.B2_BUCKET_NAME,
-      endpoint: process.env.B2_ENDPOINT,
-      region: process.env.B2_REGION,
+      bucket: s3Config.bucket,
+      endpoint: s3Config.endpoint,
+      region: s3Config.region,
       objectCount: response.Contents?.length ?? 0,
       truncated: response.IsTruncated ?? false,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Connection failed";
+  } catch (error) {
     return NextResponse.json({
       success: false,
-      error: message,
+      error: error instanceof Error ? error.message : "B2 connection failed",
     }, { status: 500 });
   }
 }

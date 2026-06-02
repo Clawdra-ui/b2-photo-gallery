@@ -1,7 +1,23 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandInput } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  type ListObjectsV2CommandInput,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { assertValidObjectKey } from "./utils";
 
-function validateEnv() {
+export interface ListedObject {
+  Key: string;
+  Size: number;
+  LastModified: Date;
+  ETag?: string;
+  ContentType?: string;
+}
+
+export function validateB2Env() {
   const missing: string[] = [];
   if (!process.env.B2_APPLICATION_KEY_ID) missing.push("B2_APPLICATION_KEY_ID");
   if (!process.env.B2_APPLICATION_KEY) missing.push("B2_APPLICATION_KEY");
@@ -22,18 +38,19 @@ export const s3Config = {
   forcePathStyle: false,
 };
 
-const client = new S3Client(s3Config);
+export const s3Client = new S3Client(s3Config);
 
-export { client };
-export { validateEnv };
+export async function listObjects(options?: { prefix?: string }): Promise<ListedObject[]> {
+  const files: ListedObject[] = [];
+  await listObjectsPaged(async (objects) => {
+    files.push(...objects);
+  }, options);
+  return files;
+}
 
-export async function listAllObjects(
-  onPage: (objects: Array<{
-    Key: string;
-    Size: number;
-    LastModified: Date;
-    ETag?: string;
-  }>) => Promise<void>
+export async function listObjectsPaged(
+  onPage: (objects: ListedObject[]) => Promise<void>,
+  options?: { prefix?: string }
 ): Promise<void> {
   let continuationToken: string | undefined;
 
@@ -41,32 +58,59 @@ export async function listAllObjects(
     const input: ListObjectsV2CommandInput = {
       Bucket: s3Config.bucket,
       ContinuationToken: continuationToken,
+      Prefix: options?.prefix,
       MaxKeys: 1000,
     };
 
-    const command = new ListObjectsV2Command(input);
-    const response = await client.send(command);
+    const response = await s3Client.send(new ListObjectsV2Command(input));
 
-    if (response.Contents && response.Contents.length > 0) {
-      const objects = response.Contents.map((obj) => ({
-        Key: obj.Key!,
-        Size: obj.Size || 0,
-        LastModified: obj.LastModified || new Date(),
-        ETag: obj.ETag,
-      }));
-
-      await onPage(objects);
+    if (response.Contents?.length) {
+      await onPage(
+        response.Contents.map((obj) => ({
+          Key: obj.Key || "",
+          Size: obj.Size || 0,
+          LastModified: obj.LastModified || new Date(),
+          ETag: obj.ETag,
+        })).filter((obj) => obj.Key)
+      );
     }
 
     continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
   } while (continuationToken);
 }
 
-export async function generatePresignedUrl(objectKey: string, expiresIn?: number): Promise<string> {
-  const expires = expiresIn ?? parseInt(process.env.PRESIGNED_URL_EXPIRES_SECONDS || "600", 10);
+export function presignExpirySeconds() {
+  return parseInt(process.env.PRESIGNED_URL_EXPIRES_SECONDS || "600", 10);
+}
+
+export async function createPresignedGetUrl(objectKey: string, expiresIn = presignExpirySeconds()) {
   const command = new GetObjectCommand({
     Bucket: s3Config.bucket,
-    Key: objectKey,
+    Key: assertValidObjectKey(objectKey),
   });
-  return getSignedUrl(client, command, { expiresIn: expires });
+
+  return getSignedUrl(s3Client, command, { expiresIn });
+}
+
+export async function createPresignedPutUrl(options: {
+  objectKey: string;
+  contentType: string;
+  expiresIn?: number;
+}) {
+  const command = new PutObjectCommand({
+    Bucket: s3Config.bucket,
+    Key: assertValidObjectKey(options.objectKey),
+    ContentType: options.contentType,
+  });
+
+  return getSignedUrl(s3Client, command, {
+    expiresIn: options.expiresIn ?? presignExpirySeconds(),
+  });
+}
+
+export async function deleteB2Object(objectKey: string) {
+  await s3Client.send(new DeleteObjectCommand({
+    Bucket: s3Config.bucket,
+    Key: assertValidObjectKey(objectKey),
+  }));
 }
