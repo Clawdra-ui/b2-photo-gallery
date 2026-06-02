@@ -1,0 +1,134 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0d0d0d;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid #222;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.pageBtn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #e0e0e0;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #2a2a2a;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 13px;
+  color: #888;
+  min-width: 60px;
+  text-align: center;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  font-size: 13px;
+  border-bottom: 1px solid transparent;
+}
+
+.alertSuccess {
+  background: #0a1f0a;
+  border-color: #1a3a1a;
+  color: #6fcf6f;
+}
+
+.alertError {
+  background: #1f0a0a;
+  border-color: #3a1a1a;
+  color: #cf6f6f;
+}
+
+.alert strong {
+  font-weight: 600;
+}
+
+.alert span {
+  color: #888;
+}
+
+.alertClose {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.alertClose:hover {
+  color: #888;
+}
+
+.sidebarSection {
+  padding: 0 12px 16px;
+  border-bottom: 1px solid #1e1e1e;
+  margin-bottom: 8px;
+}
+
+.testBtn {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #e0e0e0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.testBtn:hover:not(:disabled) {
+  background: #252525;
+  border-color: #3a3a3a;
+}
+
+.testBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

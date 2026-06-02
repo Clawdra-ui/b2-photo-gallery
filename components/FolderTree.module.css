@@ -1,0 +1,52 @@
+.tree {
+  font-size: 13px;
+}
+
+.node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: #999;
+  transition: background 0.1s, color 0.1s;
+  border-radius: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node:hover {
+  background: #1a1a1a;
+  color: #ccc;
+}
+
+.node.selected {
+  background: #1f1f1f;
+  color: #fff;
+}
+
+.arrow {
+  font-size: 14px;
+  color: #555;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.arrow.open {
+  transform: rotate(90deg);
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #444;
+  flex-shrink: 0;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

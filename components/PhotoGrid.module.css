@@ -1,0 +1,109 @@
+.grid {
+  columns: 4;
+  column-gap: 12px;
+}
+
+@media (max-width: 1400px) {
+  .grid { columns: 3; }
+}
+
+@media (max-width: 900px) {
+  .grid { columns: 2; }
+}
+
+@media (max-width: 500px) {
+  .grid { columns: 1; }
+}
+
+.cell {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #151515;
+  transition: transform 0.15s;
+}
+
+.cell:hover {
+  transform: translateY(-2px);
+}
+
+.cell.active {
+  outline: 2px solid #555;
+}
+
+.imgWrap {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  transition: opacity 0.2s;
+}
+
+.info {
+  padding: 8px 10px;
+}
+
+.filename {
+  font-size: 11px;
+  color: #777;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 300px;
+  color: #666;
+  font-size: 14px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 300px;
+  color: #666;
+  font-size: 14px;
+}
+
+.empty p {
+  font-size: 12px;
+  color: #444;
+  margin: 0;
+}
+
+.loadingMore {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  width: 100%;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #2a2a2a;
+  border-top-color: #666;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
