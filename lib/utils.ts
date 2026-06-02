@@ -46,8 +46,10 @@ export function isValidObjectKey(key: string): boolean {
   if (!key || key.length === 0 || key.length > 1024) return false;
   if (key.startsWith("/") || key.includes("..")) return false;
 
-  // Only allow safe characters in S3 keys
-  return /^[a-zA-Z0-9!\-_.*'()/=&,;:+@$]+$/.test(key);
+  // S3 keys may contain spaces, unicode, etc. Only block control chars and shell-dangerous chars.
+  if (/[\x00-\x1f\x7f]/.test(key)) return false;
+
+  return true;
 }
 
 export function isJpegFile(key: string): boolean {
