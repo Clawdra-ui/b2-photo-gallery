@@ -14,10 +14,13 @@ build/
 .env.local
 .env.production
 .env.*.local
+.env.*
 
 # Database
 prisma/dev.db
 prisma/dev.db-journal
+prisma/prisma/dev.db
+prisma/prisma/dev.db-journal
 
 # Thumbnails
 storage/
@@ -35,6 +38,8 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+tsconfig.tsbuildinfo
 
 # Vercel
 .vercel
+.env*.local
